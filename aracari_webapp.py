@@ -344,7 +344,7 @@ def VesselMorphometry() :
     | Test    | /data/P1_D1_0002_DAPI.jpg | P1_D1_0002_DAPI.jpg       |     
     
     """)
-    st.write('    ')
+    st.write('____  ')
 
     uploaded_angiotool_file = st.file_uploader("Upload your Angiotool .xls report file:")
     uploaded_xls = pd.read_excel(uploaded_angiotool_file, header= 3, names= angiotool_header) 
