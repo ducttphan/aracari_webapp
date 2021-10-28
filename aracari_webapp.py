@@ -332,15 +332,16 @@ def VesselMorphometry() :
     st.markdown("""**Instructions:**  
     1. Upload AngioTool combined_report.xls file.  
     2. Upload a keylist .csv file that can be used to sort data by group.  
+    3. Information from the keylist (e.g., Group, File_Location) will be appended 
+    to the raw dataframe for sorting purpose.
+    
+    Key List Template:
     
     | Group     | File_Location             | Image_Name                |
     | --------- |:-------------------------:| -------------------------:|
     | Control   | /data/P1_D1_0001_DAPI.jpg | P1_D1_0001_DAPI.jpg       |
     | Test      | /data/P1_D1_0002_DAPI.jpg | P1_D1_0002_DAPI.jpg       |
-    ---------------------------------------------------------------------
-    
-    3. Information from the keylist (e.g., Group, File_Location) will be appended 
-    to the raw dataframe for sorting purpose.       
+    ---------------------------------------------------------------------      
     """)
 
     uploaded_angiotool_file = st.file_uploader("Upload your Angiotool .xls report file:")
