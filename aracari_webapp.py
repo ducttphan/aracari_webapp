@@ -528,7 +528,7 @@ def VesselPermeability() :
     tabMethods[modeOptions.index(mode)]()  
 
 #Main function 
-main_modeOptions = ['ReadMe', 'Tumor Growth Analysis', 'Vessel Morphometry Analysis', 'Vessel Permeability']
+main_modeOptions = ['ReadMe', 'Tumor Growth Analysis', 'Vessel Morphometry Analysis', 'Vessel Permeability Analysis']
 
 st.image(image='Linear_Logo.tif')
 st.write('  ')
