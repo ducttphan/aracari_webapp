@@ -542,7 +542,7 @@ def VesselPermeability() :
 def PBMCInfiltration() : 
     
     #ReadMe function 
-    def ReadMe() : 
+    def PBMCReadMe() : 
     
         st.markdown("""**Instructions:**  
         1. __Extract Data__ will take a raw PBMC count .csv file from CellProfiler and extract data according to different groups based on a metadata keylist.    
@@ -713,14 +713,14 @@ def PBMCInfiltration() :
         st.write(fig)
 
     #Main function 
-    modeOptions = ['Read Me', 'Extract Data', 'Analyze Data', 'Plot Data']
+    modeOptions = ['Instructions', 'Extract Data', 'Analyze Data', 'Plot Data']
 
     st.title('PBMC INFILTRATION ANALYSIS')
     st.write("This app will extract PBMC counts from CellProfiler .csv files and perform PBMC infiltration analysis.  ")
 
     st.header('Select Mode:')
     mode = st.radio("", modeOptions, index=0)
-    tabMethods = [ReadMe, ExtractPBMCData, AnalyzePBMCData, PlotPBMCData]
+    tabMethods = [PBMCReadMe, ExtractPBMCData, AnalyzePBMCData, PlotPBMCData]
     tabMethods[modeOptions.index(mode)]()   
 
 #Main function 
