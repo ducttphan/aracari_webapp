@@ -333,8 +333,9 @@ def VesselMorphometry() :
     1. Upload AngioTool combined_report.xls file.  
     2. Upload a keylist .csv file that can be used to sort data by group.  
     3. Information from the keylist (e.g., Group, File_Location) will be appended 
-    to the raw dataframe for sorting purpose.
+    to the raw dataframe for sorting purpose.       
     """)
+
     st.markdown("""
     Key List Template:
     
@@ -537,13 +538,198 @@ def VesselPermeability() :
     tabMethods = [PermeabilityReadMe, TabulatePermeabilityData, PlotPermeabilityData]
     tabMethods[modeOptions.index(mode)]()  
 
-#Main function 
-main_modeOptions = ['ReadMe', 'Tumor Growth Analysis', 'Vessel Morphometry Analysis', 'Vessel Permeability Analysis']
+#PBMC Infiltration Analysis 
+def PBMCInfiltration() : 
+    
+    #ReadMe function 
+    def ReadMe() : 
+    
+        st.markdown("""**Instructions:**  
+        1. __Extract Data__ will take a raw PBMC count .csv file from CellProfiler and extract data according to different groups based on a metadata keylist.    
+        2. __Analyze Data__ will tabulate adhered/extravasated/total PBMC counts from .csv file (from Extract Data pipeline or pre-sorted in CellProfiler).  
+        3. __Plot Data__ will take tabulated adhered/extravasated PBMC data and generate a stack bar graph with SEM.  """)
 
-st.image(image='Linear_Logo.tif')
+    def ExtractPBMCData() :
+        datalist = []
+        namelist = []
+        savefile_key = 'savefile_'
+
+        st.markdown("""**Instructions:**  
+        1. Type in the number of group in this dataset according to the metadata keylist.    
+        2. Type in the name of groups in this dataset according to the metadata keylist.  
+        3. Type in the time point associated with this dataset.  """)
+
+
+        num_condition = st.text_input('Number of groups in this dataset, according to your keylist:')
+        name_input = st.text_input('List name of groups in this dataset according to your keylist, separated each by a comma (e.g. TNFa_100_ng_mL, TNFa_300_ng_mL):')
+        namelist = name_input.split(', ')
+        timepoint_input = st.text_input("Time point associated with this dataset:")
+
+        uploaded_file = st.file_uploader("Upload your CellProfiler *_Image.csv file:")
+        uploaded_dataframe = pd.read_csv(uploaded_file, header= 0, index_col= 'Metadata_Key_Group')
+        save_dir = st.text_input('Type directory to save raw data .csv files sorted by groups:')
+
+        st.write('___')
+        st.write("""## _Raw Data Sorted By Groups_  """)
+        for i in range(0, int(num_condition)) :
+            condition_dataframe = uploaded_dataframe.loc[namelist[i]]
+            dataObj = DataGroup(namelist[i], timepoint_input, condition_dataframe)
+            datalist.append(dataObj)
+
+            st.write(datalist[i].dataframe)
+            raw_csv = os.path.join(save_dir, namelist[i] + '_' + timepoint_input + '_raw_data.csv')
+            saved = st.button('Save ' + namelist[i] + '_' + timepoint_input + '_raw_data.csv file', key= savefile_key + str(i))
+            if saved:
+                datalist[i].dataframe.to_csv(raw_csv)
+                st.write('_Files saved_') 
+
+    def AnalyzePBMCData() : 
+
+        st.header('Analyze Data')
+        st.write("""__Instructions:__   
+        1. Name your condition and the timepoint associated with it. (e.g. Control_2h).  
+        2. Upload your __<condition>_<timepoint>_raw_data.csv__ files from Extract Data mode.  
+        3. If you have separated and analyzed data according to conditions directly in CellProfiler, upload your *_Image.csv file.  
+        """)
+
+        condition_name = st.text_input('Name of condition:')
+        uploaded_file = st.file_uploader("Select .csv file:") 
+        raw_csv = pd.read_csv(uploaded_file)
+
+
+        total_PBMC = raw_csv['Count_TotalPBMC']
+        n_totalPBMC = len(total_PBMC.index)
+
+        extravasated_PBMC = raw_csv['Count_ExtravasatedPBMC']
+        n_extravasatedPBMC = len(extravasated_PBMC.index)
+
+        n_adheredPBMC = n_totalPBMC
+
+        mean_totalPBMC = raw_csv['Count_TotalPBMC'].mean()
+        mean_extravasatedPBMC = raw_csv['Count_ExtravasatedPBMC'].mean()
+        mean_adheredPBMC = mean_totalPBMC - mean_extravasatedPBMC 
+
+        std_totalPBMC = raw_csv['Count_TotalPBMC'].std()
+        std_extravasatedPBMC = raw_csv['Count_ExtravasatedPBMC'].std()
+        std_adheredPBMC = std_totalPBMC - std_extravasatedPBMC 
+
+        sem_totalPBMC = raw_csv['Count_TotalPBMC'].sem()
+        sem_extravasatedPBMC = raw_csv['Count_ExtravasatedPBMC'].sem()
+        sem_adheredPBMC = sem_totalPBMC - sem_extravasatedPBMC 
+
+        mean_df = pd.Series([mean_adheredPBMC, mean_extravasatedPBMC, mean_totalPBMC], index= [condition_name + '_' + 'Adhered_PBMC', condition_name + '_' + 'Extravasated_PBMC', condition_name + '_' + 'Total_PBMC'])
+        std_df = pd.Series([std_adheredPBMC, std_extravasatedPBMC, std_totalPBMC], index= [condition_name + '_' + 'Adhered_PBMC', condition_name + '_' + 'Extravasated_PBMC', condition_name + '_' + 'Total_PBMC'])
+        sem_df = pd.Series([sem_adheredPBMC, sem_extravasatedPBMC, sem_totalPBMC], index= [condition_name + '_' + 'Adhered_PBMC', condition_name + '_' + 'Extravasated_PBMC', condition_name + '_' + 'Total_PBMC'])
+        nrow_df = pd.Series([n_adheredPBMC, n_extravasatedPBMC, n_totalPBMC], index= [condition_name + '_' + 'Adhered_PBMC', condition_name + '_' + 'Extravasated_PBMC', condition_name + '_' + 'Total_PBMC'])
+
+        raw_df = pd.DataFrame([mean_df, std_df, sem_df, nrow_df], index= ['Mean', 'SD', 'SEM', 'N'])
+
+        st.write(raw_df)
+
+        with st.form('save_rawdf') :
+            save_dir = st.text_input('Type directory to save the PBMC infiltration summary .csv file:')
+            raw_summary_csv = os.path.join(save_dir, condition_name + '_PBMC_infiltration_summary.csv')
+            saved = st.form_submit_button('Save')
+            if saved:
+                raw_df.to_csv(raw_summary_csv)
+                st.write('_Files saved_')
+
+    def PlotPBMCData() : 
+
+        condition_key = 'condition_'
+        file_key = 'file_key_'
+
+        totalPBMC_list = []
+        totalPBMC_std_list = []
+        totalPBMC_sem_list = []
+
+        extravasatedPBMC_list = []
+        extravasatedPBMC_std_list = []
+        extravasatedPBMC_sem_list = []
+
+        adheredPBMC_list = []
+        adheredPBMC_std_list = []
+        adheredPBMC_sem_list = []
+
+        st.header('Plot Data')
+        st.write("""__Instructions:__   
+        1. Name your plot title (e.g. Drug "A" - 1 mg/mL - 2h).  
+        2. Upload your __<condition>_PBMC_infiltration_summary.csv__ file from Analyze Data mode.   
+        3. Use sidebar options to customize your plot.  
+        """)
+        st.write('___  ')
+        plot_title = st.sidebar.text_input('Type in plot title:')
+        n_timepoint = st.sidebar.text_input('Number of time points to plot:')
+        x_axis_input = st.sidebar.text_input('Type in timepoint labels, separated by a comma (e.g. "T-2h, T-6h, T-12h"):')
+        x_axis = x_axis_input.split(', ')
+
+        #Select plot theme
+        theme_options = ['default', 'seaborn', 'ggplot', 'seaborn-white', 'seaborn-deep', 'grayscale']
+        theme_selection = st.sidebar.selectbox('Select plot theme:', theme_options, index= 0)
+        plt.style.use(theme_selection)
+
+        for i in range(0, int(n_timepoint)) :
+            timepoint_name = st.text_input("Timepoint:", key= condition_key + str(i))
+            timepoint_file = st.file_uploader('Select file to upload:', key= file_key + str(i))
+            timepoint_data = pd.read_csv(timepoint_file, header=0, index_col=0)
+
+            mean_totalPBMC = timepoint_data.iloc[0,2]
+            std_totalPBMC = timepoint_data.iloc[1,2]
+            sem_totalPBMC = timepoint_data.iloc[2,2]
+
+            mean_extravasatedPBMC = timepoint_data.iloc[0,1]
+            std_extravasatedPBMC = timepoint_data.iloc[1,1]
+            sem_extravasatedPBMC = timepoint_data.iloc[2,1]
+
+            mean_adheredPBMC = timepoint_data.iloc[0,0]
+            std_adheredPBMC = timepoint_data.iloc[1,0]
+            sem_adheredPBMC = timepoint_data.iloc[2,0]
+
+            totalPBMC_list.append(mean_totalPBMC)
+            totalPBMC_std_list.append(std_totalPBMC)
+            totalPBMC_sem_list.append(sem_totalPBMC)
+
+            extravasatedPBMC_list.append(mean_extravasatedPBMC)
+            extravasatedPBMC_std_list.append(std_extravasatedPBMC)
+            extravasatedPBMC_sem_list.append(sem_extravasatedPBMC)
+
+            adheredPBMC_list.append(mean_adheredPBMC)
+            adheredPBMC_std_list.append(std_adheredPBMC)
+            adheredPBMC_sem_list.append(sem_adheredPBMC)
+
+        st.write('___  ')
+        st.write("""## _Auto-Generated Plot_  """)
+
+        fig = plt.figure(figsize= [6.0, 4.0])
+        
+        plt.bar(x= x_axis, height= adheredPBMC_list, yerr= adheredPBMC_sem_list, label= 'Adhered PBMC', capsize = 3)
+        plt.bar(x= x_axis, height= extravasatedPBMC_list, yerr= extravasatedPBMC_sem_list, label= 'Extravasated PBMC', bottom= adheredPBMC_list, capsize = 3)
+        
+        plt.title(plot_title)
+        plt.grid(color = 'black', linestyle = 'dotted', axis= 'y', linewidth = 0.2)
+        plt.xlabel('Time Point')
+        plt.ylabel('PBMC Counts')
+        plt.legend()
+        st.write(fig)
+
+    #Main function 
+    modeOptions = ['Read Me', 'Extract Data', 'Analyze Data', 'Plot Data']
+
+    st.title('PBMC INFILTRATION ANALYSIS')
+    st.write("This app will extract PBMC counts from CellProfiler .csv files and perform PBMC infiltration analysis.  ")
+
+    st.header('Select Mode:')
+    mode = st.radio("", modeOptions, index=0)
+    tabMethods = [ReadMe, ExtractPBMCData, AnalyzePBMCData, PlotPBMCData]
+    tabMethods[modeOptions.index(mode)]()   
+
+#Main function 
+main_modeOptions = ['ReadMe', 'Tumor Growth Analysis', 'Vessel Morphometry Analysis', 'Vessel Permeability Analysis', 'PBMC Infiltration Analysis']
+
+st.image(image='/Users/ducphan/Desktop/Streamlit/Linear_Logo.tif')
 st.write('  ')
 st.header('Select Type of Analysis:')
 mode = st.radio("", main_modeOptions, index=0)
 st.write('---')
-tabMethods = [ReadMe, TumorGrowth, VesselMorphometry, VesselPermeability]
+tabMethods = [ReadMe, TumorGrowth, VesselMorphometry, VesselPermeability, PBMCInfiltration]
 tabMethods[main_modeOptions.index(mode)]()   
