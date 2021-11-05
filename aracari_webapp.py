@@ -726,8 +726,7 @@ def PBMCInfiltration() :
 #Main function 
 main_modeOptions = ['ReadMe', 'Tumor Growth Analysis', 'Vessel Morphometry Analysis', 'Vessel Permeability Analysis', 'PBMC Infiltration Analysis']
 
-st.image(image='Linear_Logo.tif')
-st.write('  ')
+st.image('Linear_Logo.tif')
 st.header('Select Type of Analysis:')
 mode = st.radio("", main_modeOptions, index=0)
 st.write('---')
